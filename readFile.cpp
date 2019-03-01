@@ -5,24 +5,13 @@
 
 using namespace std;
 
-// int oriCode2NegCode(int);
-
-// // 函数功能：对负数将原码转换为补码
-// int oriCode2NegCode(int originCode)
-// {
-//     int quotient = originCode / 2;
-//     while (quotient != 0)
-//     {
-
-//         remainder = originCode%2;
-//     }
-// }
+#define ADD_DATA_LENGTH 32768
 
 const char* file = "TEST6ch.dat";
 
 int main()
 {
-    char readUnit;
+    unsigned char readUnit;
 
     ifstream fin;
     fin.open(file, ios::binary);
@@ -34,13 +23,57 @@ int main()
         while (fin.read((char *) &readUnit, sizeof(readUnit)))
         {
             readedBytes += fin.gcount();
-            // 将负数都转换为补码
-            if ((int)readUnit < 0)
+            // cout << (int)readUnit << " ";
+            if (( readedBytes - 1 ) / ADD_DATA_LENGTH % 2 == 0)
             {
-                readUnit = ~readUnit;
+                switch (readedBytes % 4)
+                {
+                    case 1:
+                        printf("channel 1: %x\n", readUnit);
+                        // cout << "channel 1: " << (int)readUnit << "\n";
+                        break;
+                    case 2:
+                        printf("channel 2: %x\n", readUnit);
+                        // cout << "channel 2: " << (int)readUnit << "\n";
+                        break;
+                    case 3:
+                        printf("channel 3: %x\n", readUnit);
+                        // cout << "channel 3: " << (int)readUnit << "\n";
+                        break;
+                    case 0:
+                        printf("channel 4: %x\n", readUnit);
+                        // cout << "channel 4: " << (int)readUnit << "\n";
+                        break;
+                    default:
+                        break;
+                }
             }
-            cout << (int)readUnit << ' '; // 输出每一个 readUnit 的 ASCII 码值
-            if (readedBytes >= 1024)
+            else
+            {
+                switch (readedBytes % 4)
+                {
+                    case 1:
+                        printf("channel 5: %x\n", readUnit);
+                        // cout << "channel 5: " << (int)readUnit << "\n";
+                        break;
+                    case 2:
+                        printf("channel 6: %x\n", readUnit);
+                        // cout << "channel 6: " << (int)readUnit << "\n";
+                        break;
+                    case 3:
+                        printf("channel 7: %x\n", readUnit);
+                        // cout << "channel 7: " << (int)readUnit << "\n";
+                        break;
+                    case 0:
+                        printf("channel 8: %x\n", readUnit);
+                        // cout << "channel 8: " << (int)readUnit << "\n";
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (readedBytes >= (ADD_DATA_LENGTH + 32))
             {
                 break;
             }
