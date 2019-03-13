@@ -1,0 +1,35 @@
+\documentclass[UTF8, a4paper, 12pt]{ctexart}
+
+\usepackage{cite}
+
+\begin{document}
+
+\title{\bfseries ADS-B 前导脉冲检测}
+\author{刘通}
+\date{\today}
+
+\maketitle
+
+\tableofcontents
+
+\section{方法1：4脉冲检测算法}
+
+从瞬时幅度中提取每个脉冲的上升沿位置和下降沿位置，计算出每个脉冲宽度（下降沿到达时间减去上升沿到达时间）以及脉冲间隔（脉冲上升沿到达时间相减即可），满足判定要求就将第一个脉冲上升沿位置作为前导脉冲信号到达时间。
+
+该方法实现比较简单，在真实环境中也能接收较多的报文，缺点是在低信噪比下检测概率较低并且容易出现虚警。\cite{张建峰2017一种基于相关的}
+
+在 ADS-B 信号检测和分析算法中，主要研究领域均集中在时域。对于有效信号的判别主要依据 3 个重要标志：有效脉冲位置标志（Valid Pulse Position，
+VPP)、每个比特位信号的上升沿位置标志（Leading Edge Position，LEP）和每个比特位信号的下降沿位置标志（Falling Edge Position，FEP）。\cite{2013一种改进的}
+
+\section{方法2：基于相关的前导脉冲检测方法}
+
+将待检测信号与经过自相关累积的本地前导脉冲（后续本地前导脉冲都指经过自相关累积的本地前导脉冲，因为信号在处理时需自相关累积，将本地前导脉冲经过自相关累积波形的相似程度最高）进行整体相关，比较相关峰值大小来确定前导脉冲位置。\cite{张建峰2017一种基于相关的}
+
+\section{方法3：一种改进的 ADS-B 信号前导脉冲检测算法}
+
+\cite{2013一种改进的}
+
+\bibliographystyle{plain}
+\bibliography{ref}
+
+\end{document}
