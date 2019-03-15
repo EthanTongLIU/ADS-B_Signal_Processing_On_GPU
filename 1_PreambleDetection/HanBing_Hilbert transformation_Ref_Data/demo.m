@@ -36,13 +36,26 @@ plot( dataCh6 );
 % 分析通道 1 的信号
 figure( 'name' , '1通道信号的频谱' );
 subplot( 2 , 1 , 1 );
-plot( abs( fft( dataCh1 , 4096 ) ) );
+plot( abs( fft( data1 + 2048 , 4096 ) ) );
 subplot( 2 , 1 , 2 );
-plot( angle( fft( dataCh1 , 4096 ) ) );
+plot( angle( fft( data1 + 2048 , 4096 ) ) );
 
 % 将 1 通道的信号做 Hilbert 变换变为复信号
 dataCh1_complex = hilbert( data1 + 2048 );
 mod_dataCh1_complex = abs( dataCh1_complex );
+figure( 'name' , '1通道信号Hilbert变换后的解析信号' );
+% subplot( 2 , 1 , 1 );
+plot( abs( data1 + 2048 ) , 'color' , 'r' , 'linewidth' , 3 );
+hold on;
+plot( real( dataCh1_complex ) , 'color' , 'b' , 'linewidth' , 3 );
+% subplot( 2 , 1 , 2 );
+hold on;
+plot( imag( dataCh1_complex ) , 'color' , 'm' , 'linewidth' , 3 );
+hold on;
+plot( mod_dataCh1_complex , 'color' , 'g' , 'linewidth' , 3 );
+legend( '原信号取绝对值' , '实部' , '虚部' , '模' );
+% figure( 'name' , '1通道信号Hilbert变换后的功率谱' );
+% pwelch( dataCh1_complex );
 % figure( 'name' , '1通道信号经过 Hilbert 变换' );
 % for i = 1 : length( mod_dataCh1_complex )
 %     plot( [ i , i ] , [ 0 mod_dataCh1_complex(i) ] , 'color' , 'm' );
