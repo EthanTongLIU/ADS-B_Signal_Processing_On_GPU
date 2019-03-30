@@ -13,7 +13,7 @@ plot( dataCh1 , 'color' , 'b' , 'linewidth' , 1 );
 % subplot( 1 , 2 , 2 );
 % plot( abs( dataCh1 ) , 'color' , 'm' , 'linewidth' , 1 );
 % legend( '原始信号' , '原始信号取模' );
-axis( [ 0 2701 -200 200 ] );
+% axis( [ 0 2701 -200 200 ] );
 %
 
 % 计算输入序列的离散傅里叶变换，点数选择输入序列的长度
@@ -36,7 +36,7 @@ title( '频谱相位' );
 %
 
 % 计算冲激响应序列的离散傅里叶变换，点数选择输入序列的长度
-Y = [ 1i * ones( 1 , ( 2701 - 1 ) / 2 ) , -1i , - 1i * ones( 1 , ( 2701 - 1 ) / 2 ) ];
+Y = [ 1i * ones( 1 , ( N - 1 ) / 2 ) , -1i , - 1i * ones( 1 , ( N - 1 ) / 2 ) ];
 % y = 1 / pi * 1 ./ ( 1 : N );
 % Y = zeros( 1 , N );
 % 
@@ -104,7 +104,7 @@ for n = 1 : N
 end
 
 % 构建解析信号，令 Hilbert 变换后的序列作为虚部
-signal_analytic = dataCh1 + 1i * h;
+signal_analytic = dataCh1 + 1i * real( h ); % 虚部的微小扰动舍去，只保留实部
 
 % Z = zeros( 1 , N );
 % for n = 1 : N
@@ -125,9 +125,9 @@ hold on;
 plot( abs( signal_analytic ) , 'g' , 'linewidth' , 3 );
 hold on;
 plot( abs( dataCh1 ) , 'b' , 'linewidth' , 3 );
-% hold on;
-% plot( abs( hilbert( dataCh1 ) ) , 'b' , 'linewidth' , 2 );
-legend( '原始信号' , '解析信号的模' , '原始信号的模' );
+hold on;
+plot( abs( hilbert( dataCh1 ) ) , '.' , 'color' , 'm' , 'markersize' , 15 );
+legend( '原始信号' , '解析信号的模' , '原始信号的模' , 'Matlab自带变换' );
 % plot( abs( hilbert( dataCh1 ) ) , 'b' );
 %
 
