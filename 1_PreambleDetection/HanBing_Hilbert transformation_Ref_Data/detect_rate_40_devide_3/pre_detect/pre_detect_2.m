@@ -5,13 +5,14 @@ clear, clc;
 close all;
 
 % 加载数据
-load( 'data1_after_hilbert_transform.mat' );
+load( 'source/data1_after_hilbert_transform.mat' );
 data = abs( signal_analytic );
 
 delta_t = 0.075; % 设置采样间隔（1/采样率），单位微秒
 % x_bot = 0 : delta_t : delta_t * ( length( data ) - 1 ); % 横坐标转化为时间
 
-subplot( 2 , 1 , 1 );
+figure;
+% subplot( 2 , 1 , 1 );
 plot( data , '-o' , 'color' , 'b' );
 
 % 构建报头检测模板
@@ -29,14 +30,15 @@ m = length( preamble_template );
 
 r = zeros( 1 , s - m + 1 ); % 保存每一次互相关系数
 
-subplot( 2 , 1 , 2 );
-plot( [ 0 s ] , [ detect_threshold detect_threshold ] , 'color' , 'm' , 'linewidth' , 3 );
+figure;
 hold on;
+% subplot( 2 , 1 , 2 );
+plot( [ 0 s ] , [ detect_threshold detect_threshold ] , 'color' , 'm' , 'linewidth' , 3 );
 
 i = 1; n = 1;
 while ( i <= s - m + 1 )
     r(i) = preamble_template * data( i : i + m - 1 )';
-    plot( i , r(i) , '.' , 'markersize' , 12 , 'color' , 'b' );
+    plot( i , r(i) , '.' , 'markersize' , 20 , 'color' , 'b' );
     if r(i) >= detect_threshold
         disp( [ '检测到可能的报头！' , '互相关系数 r=' , num2str( r(i) ) , ', 位置 pos=' , num2str(i) ] );
         % DF 验证
@@ -44,7 +46,7 @@ while ( i <= s - m + 1 )
             frame_possible = data( i + m : i + m + 74 * ( 7 + 6 + 7 ) + 6 + 7 - 1 );
             [ is_adsb , bin_frame ] = transcode_and_df_detect( frame_possible );
             if is_adsb == 1
-                plot( i , r(i) , '.' , 'markersize' , 12 , 'color' , 'r' );
+                plot( i , r(i) , '.' , 'markersize' , 20 , 'color' , 'r' );
                 disp( 'DF 验证通过，疑似 ADS-B 报文消息！' );
                 % i = i + 120 / 1.5 * ( 7 + 6 + 7 ); % 找到 ADS-B报文后跳过后面的报文
                 % 经验证，不能直接跳过后面的报文，因为采样点数据太多，Hilbert还原效果不好，误检率很高，需要另外的检测，所以将全部疑似ADS-B报文提取出来
@@ -66,5 +68,15 @@ x_bot_1 = 0 : delta_t : delta_t * ( length( one_frame ) - 1 ); % 标准时间底
 
 figure;
 hold on;
-plot( x_bot_1( 1 : 1600 ) , 235 * standard ,'color' , 'r' );
-plot( x_bot_1 , one_frame , '-o' , 'color' , 'b' );
+plot( x_bot_1( 1 : 1600 ) , 235 * standard ,'color' , 'r' , 'linewidth' , 1.5 );
+plot( x_bot_1 , one_frame , '-' , 'color' , 'b' , 'linewidth' , 1.5 );
+xlabel( 'Time [\mus]' );
+axis( [ 0 130 0 250 ] );
+
+% 解码操作
+[ len_m , len_n ] = size( adsb_possible );
+for i = 1 : len_m
+    frame_on_hex = bin2hex( adsb_possible( i , : ) );
+    disp( frame_on_hex );
+    DF17Decoder( frame_on_hex );
+end
