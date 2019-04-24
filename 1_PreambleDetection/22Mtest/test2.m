@@ -8,8 +8,8 @@ stepWidth = 26e4;
 % data1   = data2_analytic(startPos                  + 1 : startPos +      stepWidth); % 1.039e5, 60(not adsb); 2.336e5, 60(not adsb);
 % data2   = data2_analytic(startPos +      stepWidth + 1 : startPos + 2  * stepWidth); % 0.92e4, 82(not adsb);
 % data3   = data2_analytic(startPos + 2  * stepWidth + 1 : startPos + 3  * stepWidth); % 2.405e5, 140(is adsb, useless);
-data4   = data2_analytic(startPos + 3  * stepWidth + 1 : startPos + 4  * stepWidth); % 9.84e4, 68(is adsb) NO1;
-% data5   = data2_analytic(startPos + 4  * stepWidth + 1 : startPos + 5  * stepWidth); % 1.172e5, 100(is adsb) NO2;
+% data4   = data2_analytic(startPos + 3  * stepWidth + 1 : startPos + 4  * stepWidth); % 9.84e4, 68(is adsb) NO1;
+data5   = data2_analytic(startPos + 4  * stepWidth + 1 : startPos + 5  * stepWidth); % 117184, 100(is adsb) NO2;
 % data6   = data2_analytic(startPos + 5  * stepWidth + 1 : startPos + 6  * stepWidth); % 5.075e4, 85(is adsb) NO3; 1.7587e5, 65(is adsb) NO4; 1.8482e5, 55(is absb) NO5; 2.283e5, 65(is adsb) NO6;
 % data7   = data2_analytic(startPos + 6  * stepWidth + 1 : startPos + 7  * stepWidth); % 4.4e4, 140(is adsb, useless); 8.8e4, 140(is adsb, useless); 1.858e5, 100(not adsb); 2.565e5, 55(is adsb) NO7;
 % data8   = data2_analytic(startPos + 7  * stepWidth + 1 : startPos + 8  * stepWidth); % 1.29e5, 50(is adsb) NO8;
@@ -20,58 +20,45 @@ data4   = data2_analytic(startPos + 3  * stepWidth + 1 : startPos + 4  * stepWid
 % startPos = startPos + 26e5; % 大循环步长
 % data = data2_analytic(startPos + 1 : startPos + 10 * stepWidth);
 
-stem(1 : length(data4), data4);
+stem(1 : length(data5), data5);
 hold on;
-stem(98410 + 1 : 98410 + 2640, data4(98410 + 1 : 98410 + 2640), 'color', 'r');
-title('data4 段信号序列');
+stem(117184 + 1 : 117184 + 2640, data5(117184 + 1 : 117184 + 2640), 'color', 'r');
+title('data5 段信号序列');
 xlabel('点数');
 ylabel('Amplitude');
-axis([0 26e4 0 90]);
+axis([0 26e4 0 120]);
 scrsz = get(0,'ScreenSize'); % 获取屏幕尺寸
 set(gcf, 'position', [0, scrsz(4)/1.7, scrsz(3), scrsz(4)/3]);
-set(gca, 'box', 'off', 'xtick', 0:1e4:26e4, 'ytick', 0:30:90, 'fontsize', 13);
+set(gca, 'box', 'off', 'xtick', 0:1e4:26e4, 'ytick', 0:30:120, 'fontsize', 13);
 
-% Objective: 从 data4 中提取出 adsb 信号
+% Objective: 从 data5 中提取出 adsb 信号
 % Demand:    1. 需要动态生成门限
-%            2. 双卷积排除虚假报头 
-
-adsbSeq = data4(98410 + 1 : 98410 + 2640);
-figure;
-hold on;
-t0 = linspace(0, 120, 2640);
-stem(t0, adsbSeq);
-title('ADS-B 信号序列');
-xlabel('Time(\mus)');
-ylabel('Amplitude');
-axis([-20 140 0 90]);
-scrsz = get(0,'ScreenSize'); % 获取屏幕尺寸
-set(gcf, 'position', [0, scrsz(4)/1.7, scrsz(3), scrsz(4)/3]);
-set(gca, 'box', 'off', 'xtick', 0:4:120, 'ytick', 0:30:90, 'fontsize', 13);
-
-mean4FrontPulse = mean([adsbSeq(11 * 0 + 1 : 11 * 0 + 11) adsbSeq(11 * 2 + 1 : 11 * 2 + 11) adsbSeq(11 * 7 + 1 : 11 * 7 + 11) adsbSeq(11 * 9 + 1 : 11 * 9 + 11)])
-plot([-20 140], [mean4FrontPulse mean4FrontPulse], 'color', 'r');
+%            2. 准确提取上升沿
+%            3. 排除虚假报头 
 
 preambleTemp = [ones(1, 11) zeros(1, 11) ones(1, 11) zeros(1, 44) ones(1, 11) zeros(1, 11) ones(1, 11) zeros(1, 66)];
-temp1 = [preambleTemp  ones(1, 112 * 2 * 11)];
-temp2 = [preambleTemp zeros(1, 112 * 2 * 11)];
 
-r1 = dot(temp1, adsbSeq)
-r2 = dot(temp2, adsbSeq)
-r1/r2
-
-s = length(data4);
-n = length(adsbSeq);
+s = length(data5);
 m = length(preambleTemp);
 
-R1 = zeros(1, s - n + 1);
-R2 = zeros(1, s - n + 1);
+R = zeros(1, s - m +1);
 num = 0;
-for i = 1 : s - n + 1
-    R1(i) = dot(temp1, data4(i : i + n - 1));
-    R2(i) = dot(temp2, data4(i : i + n - 1));
-    if (R1(i)/R2(i) >= 30)
-       num = num + 1;
+for i = 1 : s - m + 1
+    thresCurrent = 8 * 11 * mean(data5(i : i + m - 1));
+    R(i) = dot(preambleTemp, data5(i : i + m - 1));
+    if R(i) >= thresCurrent
+        num = num + 1;
+        disp(['位置 ', num2str(i), ' R ', num2str(R(i))]);
     end
 end
-disp('数量');
-disp(num);
+disp(['数量 ', num2str(num)]);
+figure;
+stem(R);
+hold on;
+title('卷积');
+xlabel('点数');
+ylabel('Amplitude');
+axis([1 26e4 0 4000]);
+scrsz = get(0,'ScreenSize'); % 获取屏幕尺寸
+set(gcf, 'position', [0, scrsz(4)/1.7, scrsz(3), scrsz(4)/3]);
+set(gca, 'box', 'off', 'xtick', 1:2e4:26e4, 'ytick', 0:500:4000, 'fontsize', 13);
