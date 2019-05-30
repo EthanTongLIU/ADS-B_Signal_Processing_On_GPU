@@ -10,8 +10,8 @@ format long;
 % data1_analytic = abs( hilbert( data1 ) );
 
 % >>> 直接加载已完成转换的数据 <<<
-load( 'C:\Users\刘通\Desktop\data2_analytic.mat' );
-% load( 'D:\1_Work\Y_研究生课题（2018年12月至今）\3_L波段信号处理系统\0_Data\3_6ChannelData_22M\data2_analytic.mat' );
+% load( 'C:\Users\刘通\Desktop\data2_analytic.mat' );
+load( 'D:\1_Work\Y_研究生课题（2018年12月至今）\3_L波段信号处理系统\0_Data\3_6ChannelData_22M\data2_analytic.mat' );
 
 % >>> 筛选出一段数据 <<<
 startPos = 100;
@@ -28,7 +28,7 @@ R = zeros(1, s - m +1);
 
 % 恒虚警自适应门限提取报头（抗噪）
 % 填充存储 adsb 位置信息的数组的第 1 个数据
-lambda = 0.4;
+lambda = 0.4; % 检测门限，可改动，范围 0.25 - 1
 secondStart = 0;
 adsbR = [];
 adsbPos = [];
@@ -90,7 +90,7 @@ end
 
 disp(['次选数量 ', num2str(length(adsbPos2))]);
 
-% 步骤2：报头脉冲波形简单匹配
+% 步骤2：报头脉冲波形简单中点匹配
 adsbPos3 = [];
 id3 = 0;
 zerosNum = 6;
@@ -110,6 +110,42 @@ for i = 1 : length(adsbPos2)
 end
 
 disp(['三选数量 ', num2str(length(adsbPos3))]);
+
+% % 步骤2：报头脉冲波形复杂匹配
+% adsbPos3 = [];
+% id3 = 0;
+% for i = 1 : length(adsbPos2)
+%     frame_possible = data(adsbPos2(i) : adsbPos2(i) + 2640 - 1);
+%     
+%     s1_pre = sum(frame_possible(  1 :  11));
+%     s1_aft = sum(frame_possible( 12 :  22));
+% 
+%     s2_pre = sum(frame_possible( 23 :  33));
+%     s2_aft = sum(frame_possible( 34 :  44));
+% 
+%     s3 = sum(frame_possible( 45 :  66));
+% 
+%     s4_pre = sum(frame_possible( 67 :  77));
+%     s4_aft = sum(frame_possible( 78 :  88));
+% 
+%     s5_pre = sum(frame_possible( 89 :  99));
+%     s5_aft = sum(frame_possible(100 : 110));
+% 
+%     s6 = sum(frame_possible(111 : 132));
+% 
+%     s7 = sum(frame_possible(133 : 154));
+% 
+%     s8 = sum(frame_possible(155 : 176));
+% 
+%     meanPulse = mean([s1_pre, s2_pre, s4_aft, s5_aft]);
+% 
+%     if (s1_pre > s1_aft) && (s2_pre > s2_aft) && (s4_pre < s4_aft) && (s5_pre < s5_aft) && (2 * meanPulse > s3) && (2 * meanPulse > s6) && (2 * meanPulse > s7) && (2 * meanPulse > s8)
+%        id3 = id3 + 1;
+%        adsbPos3(id3) = adsbPos2(i);
+%     end
+% end
+% 
+% disp(['三选数量 ', num2str(length(adsbPos3))]);
 
 % % DF 验证
 % adsbPos3 = [];
@@ -190,12 +226,27 @@ set(gcf, 'position', [0, scrsz(4)/1.7, scrsz(3), scrsz(4)/3]);
 set(gca, 'box', 'off', 'xtick', linspace(0, length(data), 20), 'ytick', linspace(0, max(data), 5), 'fontsize', 13);
 
 % >>> 译码 <<<
+for j = 1 : length(adsbPos3)
+    frame_data_block = data(adsbPos3(j) + 176 : adsbPos3(j) + 2640 - 1);
+    frameBit = zeros(1, 112);
+    for i = 1 : 112
+        currentBit = frame_data_block(1 + (i-1) * 22 : 1 + i * 22 - 1);
+        pre = sum(currentBit( 1 : 11));
+        aft = sum(currentBit(12 : 22));
+        if pre >= aft
+            frameBit(i) = 1;
+        end
+    end
+    frameBits(j, 1 : 112) = frameBit;
+end
 
-
-% % >>> 解码 <<<
-% [ len_m , len_n ] = size( adsb_possible );
-% for i = 1 : len_m
-%     frame_on_hex = bin2hex( adsb_possible( i , : ) );
-%     disp( frame_on_hex );
-%     DF17Decoder( frame_on_hex );
-% end
+%%
+% >>> 解码 <<<
+[ len_m , len_n ] = size( frameBits );
+for i = 1 : len_m
+    frame_on_hex = bin2hex(frameBits( i , : ));
+    disp(['No. ', num2str(i)]);
+    disp(frame_on_hex);
+    DF17Decoder(frame_on_hex);
+    disp(' ');
+end
