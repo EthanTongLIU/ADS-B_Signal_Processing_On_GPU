@@ -10,14 +10,15 @@ format long;
 % data1_analytic = abs( hilbert( data1 ) );
 
 % >>> 直接加载已完成转换的数据 <<<
-load( 'D:\1_Work\Y_研究生课题（2018年12月至今）\3_L波段信号处理系统\0_Data\3_6ChannelData_22M\data2_analytic.mat' );
+load( 'C:\Users\刘通\Desktop\data2_analytic.mat' );
+% load( 'D:\1_Work\Y_研究生课题（2018年12月至今）\3_L波段信号处理系统\0_Data\3_6ChannelData_22M\data2_analytic.mat' );
 
 % >>> 筛选出一段数据 <<<
 startPos = 100;
 stepWidth = 26e4;
 data = data2_analytic( startPos + 0 * stepWidth + 1 : startPos + 9 * stepWidth );
 
-% % >>> 进行报头检测 <<<
+% % >>> 报头检测（提取报头位置） <<<
 preambleTemp = [ones(1, 11) zeros(1, 11) ones(1, 11) zeros(1, 44) ones(1, 11) zeros(1, 11) ones(1, 11) zeros(1, 66)];
 
 s = length(data);
@@ -72,29 +73,29 @@ disp(['初选数量 ', num2str(length(adsbPos))]);
 
 % 进行抗干扰处理（去除杂波干扰）
 
-% % 步骤1：双卷积次选
-% temp1 = [preambleTemp  ones(1, 112 * 2 * 11)];
-% temp2 = [preambleTemp zeros(1, 112 * 2 * 11)];
-% 
-% adsbPos2 = [];
-% k = 0;
-% for i = 1 : length(adsbPos)
-%     r1 = dot(temp1, data(adsbPos(i) : adsbPos(i) + 2640 - 1));
-%     r2 = dot(temp2, data(adsbPos(i) : adsbPos(i) + 2640 - 1));
-%     if r1 / r2 >= 29
-%         k = k + 1;
-%         adsbPos2(k) = adsbPos(i);
-%     end
-% end
-% 
-% disp(['次选数量 ', num2str(length(adsbPos2))]);
+% 步骤1：双卷积次选
+temp1 = [preambleTemp  ones(1, 112 * 2 * 11)];
+temp2 = [preambleTemp zeros(1, 112 * 2 * 11)];
+
+adsbPos2 = [];
+k = 0;
+for i = 1 : length(adsbPos)
+    r1 = dot(temp1, data(adsbPos(i) : adsbPos(i) + 2640 - 1));
+    r2 = dot(temp2, data(adsbPos(i) : adsbPos(i) + 2640 - 1));
+    if r1 / r2 >= 29
+        k = k + 1;
+        adsbPos2(k) = adsbPos(i);
+    end
+end
+
+disp(['次选数量 ', num2str(length(adsbPos2))]);
 
 % 步骤2：报头脉冲波形简单匹配
 adsbPos3 = [];
 id3 = 0;
 zerosNum = 6;
-for i = 1 : length(adsbPos)
-    frame_possible = data(adsbPos(i) : adsbPos(i) + 2640 - 1);
+for i = 1 : length(adsbPos2)
+    frame_possible = data(adsbPos2(i) : adsbPos2(i) + 2640 - 1);
     preFrt = [frame_possible(6) frame_possible(6 + 11) frame_possible(6 + 22) frame_possible(6 + 33) frame_possible(6 + 66) frame_possible(6 + 77) frame_possible(6 + 88) frame_possible(6 + 99)];
     preAft = zeros(1, 4);
     for j = 1 : 4
@@ -104,11 +105,11 @@ for i = 1 : length(adsbPos)
     end
     if isequal(preAft, [1 1 0 0])
        id3 = id3 + 1;
-       adsbPos3(id3) = adsbPos(i);
+       adsbPos3(id3) = adsbPos2(i);
     end
 end
 
-disp(['次选数量 ', num2str(length(adsbPos3))]);
+disp(['三选数量 ', num2str(length(adsbPos3))]);
 
 % % DF 验证
 % adsbPos3 = [];
@@ -143,14 +144,14 @@ disp(['次选数量 ', num2str(length(adsbPos3))]);
 % disp(['三选数量 ', num2str(length(adsbPos3))]);
 
 figure;
-subplot(2, 1, 1);
-stem(1 : length(data), data);
+subplot(3, 1, 1);
+plot(1 : length(data), data);
 hold on;
 for i = 1 : length(adsbPos)
     sigPos = adsbPos(i);
-    stem(sigPos : sigPos + 2640 - 1, data(sigPos : sigPos + 2640 - 1), 'color', 'r');
+    plot(sigPos : sigPos + 2640 - 1, data(sigPos : sigPos + 2640 - 1), 'color', 'r');
 end
-title('data 段信号序列');
+title('初选');
 xlabel('点数');
 ylabel('Amplitude');
 axis([0 length(data) 0 max(data)]);
@@ -158,20 +159,37 @@ scrsz = get(0,'ScreenSize'); % 获取屏幕尺寸
 set(gcf, 'position', [0, scrsz(4)/1.7, scrsz(3), scrsz(4)/3]);
 set(gca, 'box', 'off', 'xtick', linspace(0, length(data), 20), 'ytick', linspace(0, max(data), 5), 'fontsize', 13);
 
-subplot(2, 1, 2);
-stem(1 : length(data), data);
+subplot(3, 1, 2);
+plot(1 : length(data), data);
 hold on;
-for i = 1 : length(adsbPos3)
-    sigPos = adsbPos3(i);
-    stem(sigPos : sigPos + 2640 - 1, data(sigPos : sigPos + 2640 - 1), 'color', 'r');
+for i = 1 : length(adsbPos2)
+    sigPos = adsbPos2(i);
+    plot(sigPos : sigPos + 2640 - 1, data(sigPos : sigPos + 2640 - 1), 'color', 'r');
 end
-title('data 段信号序列');
+title('次选');
 xlabel('点数');
 ylabel('Amplitude');
 axis([0 length(data) 0 max(data)]);
 scrsz = get(0,'ScreenSize'); % 获取屏幕尺寸
 set(gcf, 'position', [0, scrsz(4)/1.7, scrsz(3), scrsz(4)/3]);
 set(gca, 'box', 'off', 'xtick', linspace(0, length(data), 20), 'ytick', linspace(0, max(data), 5), 'fontsize', 13);
+
+subplot(3, 1, 3);
+plot(1 : length(data), data);
+hold on;
+for i = 1 : length(adsbPos3)
+    sigPos = adsbPos3(i);
+    plot(sigPos : sigPos + 2640 - 1, data(sigPos : sigPos + 2640 - 1), 'color', 'r');
+end
+title('三选');
+xlabel('点数');
+ylabel('Amplitude');
+axis([0 length(data) 0 max(data)]);
+scrsz = get(0,'ScreenSize'); % 获取屏幕尺寸
+set(gcf, 'position', [0, scrsz(4)/1.7, scrsz(3), scrsz(4)/3]);
+set(gca, 'box', 'off', 'xtick', linspace(0, length(data), 20), 'ytick', linspace(0, max(data), 5), 'fontsize', 13);
+
+% >>> 译码 <<<
 
 
 % % >>> 解码 <<<
